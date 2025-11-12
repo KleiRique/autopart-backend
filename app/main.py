@@ -1,11 +1,11 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.settings import settings
 from app.routes import users, stores, conversations, scraping, waha
 
 app = FastAPI(title=settings.APP_NAME)
 
-# Configuração de CORS
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"] if settings.DEBUG else [settings.FRONTEND_URL],
@@ -23,15 +23,4 @@ app.include_router(waha.router, prefix="/webhook/waha", tags=["waha"])
 
 @app.get("/")
 def root():
-    return {"ok": True, "name": settings.APP_NAME}
-
-# WebSocket opcional (não interfere mais no deploy)
-@app.websocket("/ws/conversations/{conversation_id}")
-async def ws_conversation(websocket: WebSocket, conversation_id: str):
-    await websocket.accept()
-    try:
-        while True:
-            data = await websocket.receive_text()
-            await websocket.send_text(f"Mensagem recebida: {data}")
-    except WebSocketDisconnect:
-        print(f"Conexão encerrada: {conversation_id}")
+    return {"ok": True, "message": "Backend Autoparts ativo!"}
