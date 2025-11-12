@@ -6,10 +6,8 @@ router = APIRouter(prefix="/waha", tags=["WAHA"])
 
 @router.post("/webhook")
 async def waha_webhook(payload: dict):
-    """
-    Recebe mensagens do WAHA (WhatsApp API)
-    e envia para o agente de IA processar.
-    """
+    # Recebe mensagens do WAHA (WhatsApp API)
+    # e envia para o agente de IA processar.
     message = WahaMessage(
         sender=payload.get("from"),
         text=payload.get("text", {}).get("body", "")
