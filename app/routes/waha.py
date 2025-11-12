@@ -1,20 +1,24 @@
-from fastapi import APIRouter, Depends
-from app.schemas import WahaMessage
-from app.ai_agent import process_message
+from fastapi import APIRouter, Request, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db import get_session
+from app.models import Message
+from app.ai_agent import parse_store_reply, decide_best_quote
 
 router = APIRouter(prefix="/waha", tags=["WAHA"])
 
 @router.post("/webhook")
-async def waha_webhook(payload: dict):
-    # Recebe mensagens do WAHA (WhatsApp API)
-    # e envia para o agente de IA processar.
-    message = WahaMessage(
-        sender=payload.get("from"),
-        text=payload.get("text", {}).get("body", "")
-    )
+async def waha_webhook(req: Request, db: AsyncSession = Depends(get_session)):
+    body = await req.json()
+    text = body.get("message", {}).get("text", "")
+    from_number = body.get("from", "")
+    conv_id = body.get("conversation", {}).get("id")
 
-    response = await process_message(message.sender, message.text)
+    if not text or not from_number:
+        return {"ignored": True}
 
-    return {
-        "reply": response
-    }
+    msg = Message(conversation_id=conv_id, role="store", content=text)
+    db.add(msg)
+    await db.commit()
+
+    reply = await parse_store_reply(text)
+    return {"reply": reply}
